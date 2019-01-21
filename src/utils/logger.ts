@@ -5,36 +5,38 @@ import * as PrettyError from 'pretty-error'; // it's really handy to make your l
 import { LoggerOptions } from 'winston';
 import * as DailyRotateFile from 'winston-daily-rotate-file';
 
-const env = process.env.NODE_ENV || 'development';
-
-const consoleLogLevel =
-  env === 'development' ? 'verbose' : env === 'test' ? 'none' : 'info';
-
-const logDir = 'logs';
-if (!fs.existsSync(logDir)) {
-  fs.mkdirSync(logDir);
-}
-
 export class Logger {
   private readonly logger: winston.Logger;
   private readonly prettyError = new PrettyError();
-  private readonly logDir = 'logs';
 
-  public static loggerOptions: LoggerOptions = {
+  static logDir = 'logs';
+  static env = process.env.NODE_ENV || 'development';
+
+  private static loggerOptions: LoggerOptions = {
     transports: [
       new DailyRotateFile({
-        filename: `${logDir}/-stderr.log`,
-        datePattern: 'yyyy-MM-dd',
+        dirname: 'logs',
+        filename: '%DATE%-stderr.log',
+        datePattern: 'YYYY-MM-DD',
         level: 'error',
       }),
       new DailyRotateFile({
-        filename: `${logDir}/-stdout.log`,
-        datePattern: 'yyyy-MM-dd',
-        level: env === 'development' ? 'verbose' : 'info',
+        dirname: 'logs',
+        filename: '%DATE%-stdout.log',
+        datePattern: 'YYYY-MM-DD',
+        level: Logger.env === 'development' ? 'verbose' : 'info',
       }),
     ],
   };
+
+  private static createLogFolderIfNeeded(): void {
+    if (!fs.existsSync(this.logDir)) {
+      fs.mkdirSync(this.logDir);
+    }
+  }
   constructor(private context: string, transport?) {
+    Logger.createLogFolderIfNeeded();
+
     this.logger = winston.createLogger(Logger.loggerOptions);
     this.prettyError.skipNodeFiles();
     this.prettyError.skipPackage('express', '@nestjs/common', '@nestjs/core');
@@ -43,6 +45,7 @@ export class Logger {
   static configGlobal(options?: LoggerOptions) {
     this.loggerOptions = options;
   }
+
   log(message: string): void {
     const currentDate = new Date();
     this.logger.info(message, {
@@ -51,6 +54,7 @@ export class Logger {
     });
     this.formatedLog('info', message);
   }
+
   error(message: string, trace?: any): void {
     const currentDate = new Date();
     // i think the trace should be JSON Stringified
@@ -60,6 +64,7 @@ export class Logger {
     });
     this.formatedLog('error', message, trace);
   }
+
   warn(message: string): void {
     const currentDate = new Date();
     this.logger.warn(message, {
@@ -71,6 +76,7 @@ export class Logger {
   overrideOptions(options: LoggerOptions) {
     this.logger.configure(options);
   }
+
   // this method just for printing a cool log in your terminal , using chalk
   private formatedLog(level: string, message: string, error?): void {
     let result = '';
@@ -80,21 +86,21 @@ export class Logger {
 
     switch (level) {
       case 'info':
-        result = `[${color.blue('INFO')}] ${color.dim.yellow.bold.underline(
+        result = `[${color.blue('INFO')}] ${color.yellow.bold(
           time,
         )} [${color.green(this.context)}] ${message}`;
         break;
       case 'error':
-        result = `[${color.red('ERR')}] ${color.dim.yellow.bold.underline(
+        result = `[${color.red('ERR')}] ${color.yellow.bold(
           time,
         )} [${color.green(this.context)}] ${message}`;
-        if (error && env === 'development') {
+        if (error && Logger.env === 'development') {
           this.prettyError.render(error, true);
         }
 
         break;
       case 'warn':
-        result = `[${color.yellow('WARN')}] ${color.dim.yellow.bold.underline(
+        result = `[${color.yellow('WARN')}] ${color.yellow.bold(
           time,
         )} [${color.green(this.context)}] ${message}`;
         break;
