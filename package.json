@@ -1,6 +1,6 @@
 {
   "name": "node-ts-barebones",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Barebones NodeJS setup with TypeScript, Jest, TSLint and Prettier",
   "author": "Tiago Pina - <tiagoaspina@gmail.com>",
   "license": "MIT",
@@ -17,7 +17,6 @@
     "tests:watch": "jest --watch",
     "tests:cov": "jest --coverage",
     "tests:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "tests:e2e": "jest --config ./test/jest-e2e.json"
   },
   "keywords": [
     "node",
