@@ -8,5 +8,6 @@ describe('it should create a new person', () => {
     const john = new Human(person);
 
     expect(john).toBeDefined();
+    expect(john.printPerson()).toEqual('John Doe is 40 years old');
   });
 });

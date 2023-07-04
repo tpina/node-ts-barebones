@@ -3,14 +3,20 @@ import { Logger } from './utils/logger';
 
 export class Human {
   private readonly logger: Logger;
-  constructor(private person?: Person) {
+  private person: Person;
+
+  constructor(person: Person) {
     this.logger = new Logger('person');
     this.logger.log('Logger created');
     this.logger.log('Creating human');
-    this.person = person;
+    this.person = person ?? {
+      firstName: 'John',
+      lastName: 'Doe',
+      age: 40,
+    };
   }
 
-  printPerson(): void {
+  printPerson(): string {
     const message: string = [
       this.person.firstName,
       this.person.lastName,
@@ -19,5 +25,6 @@ export class Human {
       'years old',
     ].join(' ');
     this.logger.log(message);
+    return message;
   }
 }

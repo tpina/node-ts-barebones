@@ -1,9 +1,9 @@
-import * as fs from 'fs';
+import fs from 'fs';
 import * as winston from 'winston';
-import * as chalk from 'chalk';
-import * as PrettyError from 'pretty-error'; // it's really handy to make your life easier
+import 'winston-daily-rotate-file';
+import chalk from 'chalk';
+import PrettyError from 'pretty-error'; // it's really handy to make your life easier
 import { LoggerOptions } from 'winston';
-import * as DailyRotateFile from 'winston-daily-rotate-file';
 
 export class Logger {
   private readonly logger: winston.Logger;
@@ -14,13 +14,13 @@ export class Logger {
 
   private static loggerOptions: LoggerOptions = {
     transports: [
-      new DailyRotateFile({
+      new winston.transports.DailyRotateFile({
         dirname: 'logs',
         filename: '%DATE%-stderr.log',
         datePattern: 'YYYY-MM-DD',
         level: 'error',
       }),
-      new DailyRotateFile({
+      new winston.transports.DailyRotateFile({
         dirname: 'logs',
         filename: '%DATE%-stdout.log',
         datePattern: 'YYYY-MM-DD',
@@ -34,7 +34,7 @@ export class Logger {
       fs.mkdirSync(this.logDir);
     }
   }
-  constructor(private context: string, transport?) {
+  constructor(private context: string) {
     Logger.createLogFolderIfNeeded();
 
     this.logger = winston.createLogger(Logger.loggerOptions);
@@ -43,7 +43,9 @@ export class Logger {
   }
 
   static configGlobal(options?: LoggerOptions) {
-    this.loggerOptions = options;
+    if (options) {
+      this.loggerOptions = options;
+    }
   }
 
   log(message: string): void {
@@ -52,7 +54,7 @@ export class Logger {
       timestamp: currentDate.toISOString(),
       context: this.context,
     });
-    this.formatedLog('info', message);
+    this.formattedLog('info', message);
   }
 
   error(message: string, trace?: any): void {
@@ -62,7 +64,7 @@ export class Logger {
       timestamp: currentDate.toISOString(),
       context: this.context,
     });
-    this.formatedLog('error', message, trace);
+    this.formattedLog('error', message, trace);
   }
 
   warn(message: string): void {
@@ -71,38 +73,41 @@ export class Logger {
       timestamp: currentDate.toISOString(),
       context: this.context,
     });
-    this.formatedLog('warn', message);
+    this.formattedLog('warn', message);
   }
   overrideOptions(options: LoggerOptions) {
     this.logger.configure(options);
   }
 
   // this method just for printing a cool log in your terminal , using chalk
-  private formatedLog(level: string, message: string, error?): void {
+  private formattedLog(
+    level: string,
+    message: string,
+    error?: PrettyError.ParsedError,
+  ): void {
     let result = '';
-    const color = chalk.default;
     const currentDate = new Date();
     const time = `${currentDate.getHours()}:${currentDate.getMinutes()}:${currentDate.getSeconds()}`;
 
     switch (level) {
       case 'info':
-        result = `[${color.blue('INFO')}] ${color.yellow.bold(
+        result = `[${chalk.blue('INFO')}] ${chalk.yellow.bold(
           time,
-        )} [${color.green(this.context)}] ${message}`;
+        )} [${chalk.green(this.context)}] ${message}`;
         break;
       case 'error':
-        result = `[${color.red('ERR')}] ${color.yellow.bold(
+        result = `[${chalk.red('ERR')}] ${chalk.yellow.bold(
           time,
-        )} [${color.green(this.context)}] ${message}`;
+        )} [${chalk.green(this.context)}] ${message}`;
         if (error && Logger.env === 'development') {
           this.prettyError.render(error, true);
         }
 
         break;
       case 'warn':
-        result = `[${color.yellow('WARN')}] ${color.yellow.bold(
+        result = `[${chalk.yellow('WARN')}] ${chalk.yellow.bold(
           time,
-        )} [${color.green(this.context)}] ${message}`;
+        )} [${chalk.green(this.context)}] ${message}`;
         break;
       default:
         break;
